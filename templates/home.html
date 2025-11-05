@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOS Ambulância - Início</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0077b6, #023e8a);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .home-container {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        p {
+            font-size: 1.1em;
+            margin-bottom: 25px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.9);
+            font-size: 1em;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #0077b6;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 1em;
+            background-color: #023e8a;
+            color: white;
+            margin: 10px 0;
+        }
+
+        button:hover {
+            background-color: #0077b6;
+        }
+
+        .location-info {
+            font-size: 0.9em;
+            margin: 15px 0;
+            padding: 12px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .location-button {
+            background-color: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+        }
+
+        .location-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="home-container">
+        <h1>SOS Ambulância</h1>
+        <p>Bem-vindo ao sistema de busca de hospitais e UPAs com vagas disponíveis.</p>
+
+        <form action="{{ url_for('mapa') }}" method="POST" id="locationForm">
+            <select name="bairro" id="bairroSelect" required>
+                <option value="">Selecione um bairro</option>
+                {% for bairro in bairros %}
+                <option value="{{ bairro }}">{{ bairro }}</option>
+                {% endfor %}
+            </select>
+            
+            <div id="locationInfo" class="location-info">
+                Carregando sua localização...
+            </div>
+            
+            <button type="button" id="useLocationBtn" class="location-button" style="display: none;">
+                Usar minha localização atual
+            </button>
+            
+            <button type="submit">Procurar hospital mais próximo</button>
+        </form>
+    </div>
+
+    <script>
+        const bairrosCoord = {{ coordenadas_bairros|tojson|safe }};
+        const select = document.getElementById('bairroSelect');
+        const locationInfo = document.getElementById('locationInfo');
+        const useLocationBtn = document.getElementById('useLocationBtn');
+
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function encontrarBairroMaisProximo(lat, lon) {
+            let menorDistancia = Infinity;
+            let bairroMaisProximo = null;
+
+            for (const [bairro, coord] of Object.entries(bairrosCoord)) {
+                const distancia = calcularDistancia(lat, lon, coord[0], coord[1]);
+                if (distancia < menorDistancia) {
+                    menorDistancia = distancia;
+                    bairroMaisProximo = bairro;
+                }
+            }
+
+            return { bairro: bairroMaisProximo, distancia: menorDistancia };
+        }
+
+        function atualizarBairroProximo(position) {
+            const { latitude, longitude } = position.coords;
+            const { bairro, distancia } = encontrarBairroMaisProximo(latitude, longitude);
+            
+            if (bairro) {
+                locationInfo.textContent = `Bairro mais próximo: ${bairro} (${distancia.toFixed(1)}km)`;
+                useLocationBtn.style.display = 'block';
+                useLocationBtn.onclick = () => {
+                    select.value = bairro;
+                    locationInfo.textContent = `Usando localização: ${bairro}`;
+                };
+            }
+        }
+
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                atualizarBairroProximo,
+                (error) => {
+                    locationInfo.innerHTML = `
+                        Não foi possível obter sua localização.<br>
+                        <button type="button" onclick="window.location.reload()" class="location-button" style="margin-top: 10px;">
+                            Tentar novamente
+                        </button>
+                    `;
+                    console.error("Erro de geolocalização:", error);
+                }
+            );
+        } else {
+            locationInfo.textContent = "Seu navegador não suporta geolocalização.";
+        }
+    </script>
+</body>
+</html>

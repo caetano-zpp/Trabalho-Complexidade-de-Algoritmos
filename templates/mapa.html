@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOS Ambulância - Resultado</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        body {
+            font-family: "Poppins", sans-serif;
+            background: linear-gradient(to bottom right, #007bff, #00b4d8);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 1000px;
+            margin-top: 40px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        #map {
+            width: 100%;
+            height: 500px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .legenda {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .legenda-item {
+            margin: 5px 0;
+        }
+
+        .cor-indicador {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .custom-div-icon {
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-weight: bold;
+        }
+
+        .resultado {
+            font-size: 1.2em;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        button {
+            margin-top: 20px;
+            background-color: #023e8a;
+            border: none;
+            color: white;
+            font-weight: bold;
+            padding: 10px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #0077b6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Resultado da Busca</h1>
+
+        <div class="resultado">
+            <strong>Hospital Recomendado:</strong> {{ hospital }}<br>
+            <strong>Bairro de origem:</strong> {{ bairro }}
+        </div>
+
+        <div class="legenda">
+            <h3>Legenda:</h3>
+            <div class="legenda-item">
+                <span class="cor-indicador" style="background-color: #2ecc71;"></span>
+                Baixa ocupação (menos de 60%)
+            </div>
+            <div class="legenda-item">
+                <span class="cor-indicador" style="background-color: #f1c40f;"></span>
+                Média ocupação (60% a 80%)
+            </div>
+            <div class="legenda-item">
+                <span class="cor-indicador" style="background-color: #e74c3c;"></span>
+                Alta ocupação (mais de 80%)
+            </div>
+            <div class="legenda-item">
+                <span class="cor-indicador" style="background-color: #3498db;"></span>
+                Sua localização
+            </div>
+        </div>
+
+        <div id="map"></div>
+
+        <button onclick="window.location.href='{{ url_for('home') }}'">Nova Busca</button>
+    </div>
+
+    <script>
+        // Inicializa o mapa
+        const map = L.map('map');
+        
+        // Adiciona a camada do OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Função para determinar a cor do marcador baseado na taxa de ocupação
+        function getMarkerColor(ocupacao) {
+            if (ocupacao < 0.6) return '#2ecc71'; // Verde
+            if (ocupacao < 0.8) return '#f1c40f'; // Amarelo
+            return '#e74c3c'; // Vermelho
+        }
+
+        // Adiciona marcador do bairro de origem
+        const bairroCoord = {{ bairro_coord|tojson }};
+        if (bairroCoord) {
+            L.marker(bairroCoord, {
+                icon: L.divIcon({
+                    className: 'custom-div-icon',
+                    html: '📍',
+                    iconSize: [25, 25],
+                    iconAnchor: [12, 25],
+                    popupAnchor: [0, -25]
+                })
+            })
+            .bindPopup('{{ bairro }} (Sua localização)')
+            .addTo(map);
+        }
+
+        // Array para armazenar todos os marcadores para ajustar o zoom
+        const bounds = L.latLngBounds([bairroCoord]);
+
+        // Adiciona marcadores para todos os hospitais
+        const hospitais = {{ hospitais|tojson }};
+        hospitais.forEach(hospital => {
+            const color = getMarkerColor(hospital.ocupacao);
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div style="background-color: ${color}; width: 25px; height: 25px; border-radius: 50%; border: 2px solid #fff;">
+                        <span style="color: #fff; font-size: 14px;">H</span>
+                      </div>`,
+                iconSize: [25, 25],
+                iconAnchor: [12, 12],
+                popupAnchor: [0, -12]
+            });
+
+            L.marker(hospital.coords, { icon: icon })
+                .bindPopup(`
+                    <strong>${hospital.nome}</strong><br>
+                    Ocupação: ${Math.round(hospital.ocupacao * 100)}%<br>
+                    Leitos: ${hospital.ocupados}/${hospital.total}<br>
+                    Distância: ${hospital.distancia} bairros
+                `)
+                .addTo(map);
+
+            bounds.extend(hospital.coords);
+        });
+
+        // Ajusta o zoom para mostrar todos os pontos
+        map.fitBounds(bounds.pad(0.1));
+    </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOS Ambulância</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>SOS Ambulância</h1>
+        <p class="descricao">
+            Sistema de apoio à ambulância para encontrar o hospital ou UPA mais próximo com leitos disponíveis.
+        </p>
+
+        <div class="login-box">
+            <h2>Login</h2>
+            <form action="{{ url_for('login') }}" method="POST">
+                <input type="text" name="usuario" placeholder="Usuário" required>
+                <input type="password" name="senha" placeholder="Senha" required>
+                <button type="submit">Entrar</button>
+            </form>
+            {% if erro %}
+            <p class="mensagem erro">{{ erro }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 SOS Ambulância | Projeto Acadêmico</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

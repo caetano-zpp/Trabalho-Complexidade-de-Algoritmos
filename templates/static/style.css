@@ -1,0 +1,77 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    background: linear-gradient(to bottom right, #007bff, #00b4d8);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.container {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 50px;
+    border-radius: 20px;
+    text-align: center;
+    width: 420px; /* era 350px */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+
+h1 {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.descricao {
+    font-size: 0.9em;
+    margin-bottom: 25px;
+}
+
+.login-box h2 {
+    margin-bottom: 15px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #023e8a;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background-color: #0077b6;
+}
+
+.mensagem {
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+footer {
+    position: absolute;
+    bottom: 10px;
+    font-size: 0.8em;
+    color: rgba(255,255,255,0.8);
+}

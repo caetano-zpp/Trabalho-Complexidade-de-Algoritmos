@@ -1,0 +1,1 @@
+// Não precisamos mais deste script já que o formulário agora envia diretamente para o Flask
