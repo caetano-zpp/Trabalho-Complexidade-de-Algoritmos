@@ -92,3 +92,23 @@ Siga estes passos para preparar e ativar o ambiente de desenvolvimento (Windows 
 Observações:
 - O arquivo `requirements.txt` contém dependências mínimas (Flask). Se você adicionar outras bibliotecas, atualize esse arquivo com `pip freeze > requirements.txt` dentro do virtualenv.
 - A pasta `venv/` está listada em `.gitignore` para não ser versionada.
+ 
+## Repositório remoto
+
+O código está disponível no repositório remoto:
+
+https://github.com/caetano-zpp/Trabalho-Complexidade-de-Algoritmos.git
+
+## Versão das dependências
+
+Dependência principal instalada no ambiente virtual:
+
+- Flask 3.1.2
+
+## Execução rápida (PowerShell)
+
+Você também pode usar o script `run.ps1` para ativar o venv e rodar a aplicação em um comando:
+
+```powershell
+.\run.ps1
+```
