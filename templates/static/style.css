@@ -5,9 +5,21 @@
     font-family: "Poppins", sans-serif;
 }
 
+:root {
+    --bg-start: #0077b6;
+    --bg-end: #023e8a;
+    --button-bg: #023e8a;
+    --button-hover: #0077b6;
+    --container-bg: rgba(255, 255, 255, 0.1);
+    --text-color: #ffffff;
+    --muted-text: rgba(255,255,255,0.9);
+    --panel-bg: rgba(0, 0, 0, 0.2);
+    --error: #ff4444;
+}
+
 body {
-    background: linear-gradient(to bottom right, #007bff, #00b4d8);
-    color: #fff;
+    background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+    color: var(--text-color);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -16,7 +28,7 @@ body {
 }
 
 .container {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--container-bg);
     padding: 50px;
     border-radius: 20px;
     text-align: center;
@@ -51,8 +63,8 @@ input {
 button {
     width: 100%;
     padding: 10px;
-    background-color: #023e8a;
-    color: white;
+    background-color: var(--button-bg);
+    color: var(--text-color);
     font-weight: bold;
     border: none;
     border-radius: 8px;
@@ -61,8 +73,9 @@ button {
 }
 
 button:hover {
-    background-color: #0077b6;
+    background-color: var(--button-hover);
 }
+
 
 .mensagem {
     margin-top: 10px;
@@ -73,5 +86,5 @@ footer {
     position: absolute;
     bottom: 10px;
     font-size: 0.8em;
-    color: rgba(255,255,255,0.8);
+    color: var(--muted-text);
 }
