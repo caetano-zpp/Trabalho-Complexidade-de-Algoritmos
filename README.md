@@ -105,6 +105,27 @@ Dependência principal instalada no ambiente virtual:
 
 - Flask 3.1.2
 
+## Banco de Dados (SQLite)
+
+O projeto agora persiste dados de bairros, hospitais e adjacências em um banco SQLite (`data.db`) usando `Flask-SQLAlchemy`.
+
+Como criar e popular o banco (com o `venv` ativado):
+
+```powershell
+# instalar dependência (se ainda não instalada)
+pip install -r requirements.txt
+
+# o banco será inicializado automaticamente na primeira execução do app
+.\run.ps1
+
+# Alternativamente, executar diretamente em Python:
+python - <<'PY'
+from app import init_db
+init_db(seed=True)
+print('DB criado e populado')
+PY
+```
+
 ## Execução rápida (PowerShell)
 
 Você também pode usar o script `run.ps1` para ativar o venv e rodar a aplicação em um comando:
