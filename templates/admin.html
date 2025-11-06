@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin - Hospitais</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+    /* Admin page layout improvements */
+    /* override generic .container width to allow wider admin panel */
+    .admin-container.container { width: 100%; max-width: 1200px; margin: 30px auto; padding: 20px; }
+    .admin-container { margin: 30px auto; }
+        h1 { margin-bottom: 6px; }
+        p { margin-top: 0; color: var(--muted-text); text-align: center; }
+
+    /* Add form: grid layout for better alignment */
+    .add-form { display: grid; grid-template-columns: 1fr 260px 120px 120px 150px 150px; gap: 8px; align-items: center; }
+        .add-form input, .add-form select { padding: 10px; border-radius: 8px; border: none; }
+        .add-form input::placeholder { color: rgba(0,0,0,0.45); }
+        .add-form button { grid-column: 1 / -1; justify-self: center; width: 220px; padding: 10px 14px; border-radius: 8px; border: none; background: var(--button-bg); color: white; cursor: pointer; }
+        .add-form button:hover { background: var(--button-hover); }
+
+    .table-wrap { width: 100%; overflow-x: auto; margin-top: 20px; }
+    table { width: 100%; min-width: 1000px; border-collapse: collapse; background: rgba(255,255,255,0.03); border-radius: 8px; overflow: hidden; }
+        thead { background: rgba(0,0,0,0.12); }
+        th, td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); text-align: left; vertical-align: middle; }
+        th { font-weight: 600; font-size: 0.95em; }
+        tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+        .actions { display:flex; gap:8px; align-items:center; }
+        .actions a, .actions button { display:inline-block; padding:6px 10px; border-radius:8px; text-decoration:none; background: rgba(0,0,0,0.25); color: white; border: none; cursor: pointer; font-size:0.9em; }
+        .actions a:hover, .actions button:hover { background: var(--button-bg); }
+
+        .coord { font-family: monospace; opacity: 0.9; }
+
+        /* Responsive adjustments */
+        @media (max-width: 1100px) {
+            .add-form { grid-template-columns: 1fr 200px; }
+            .add-form button { grid-column: 1 / -1; width: 100%; }
+        }
+
+        @media (max-width: 880px) {
+            .add-form { grid-template-columns: 1fr; }
+            .add-form button { grid-column: 1; width: 100%; }
+            .admin-container { padding: 12px; }
+            table { font-size: 0.9em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container container">
+        <h1>Administração - Hospitais</h1>
+        <p>Adicionar novo hospital</p>
+        <form action="/admin/add" method="post">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input name="nome" placeholder="Nome do hospital" required style="flex:1; padding:8px; border-radius:6px;">
+                <select name="bairro_id" required style="padding:8px; border-radius:6px;">
+                    <option value="">Selecione bairro</option>
+                    {% for b in bairros %}
+                    <option value="{{ b.id }}">{{ b.nome }}</option>
+                    {% endfor %}
+                </select>
+                <input name="lat" placeholder="lat" style="width:100px;padding:8px;border-radius:6px;">
+                <input name="lon" placeholder="lon" style="width:100px;padding:8px;border-radius:6px;">
+                <input name="leitos_totais" placeholder="Leitos totais" style="width:120px;padding:8px;border-radius:6px;">
+                <input name="leitos_ocupados" placeholder="Leitos ocupados" style="width:120px;padding:8px;border-radius:6px;">
+                <button type="submit">Adicionar</button>
+            </div>
+        </form>
+
+        <h2 style="margin-top:20px;">Hospitais cadastrados</h2>
+        <table>
+            <thead>
+                <tr><th>ID</th><th>Nome</th><th>Bairro</th><th>Leitos (ocupados/total)</th><th>Coord</th><th>Ações</th></tr>
+            </thead>
+            <tbody>
+                {% for h in hospitals %}
+                <tr>
+                    <td>{{ h.id }}</td>
+                    <td>{{ h.nome }}</td>
+                    <td>{{ h.bairro.nome if h.bairro else '—' }}</td>
+                    <td>{{ h.leitos_ocupados }} / {{ h.leitos_totais }}</td>
+                    <td>{{ '%.5f'|format(h.lat) if h.lat else '' }} {{ ',' if h.lat and h.lon else '' }} {{ '%.5f'|format(h.lon) if h.lon else '' }}</td>
+                    <td class="actions">
+                        <a href="/admin/edit/{{ h.id }}">Editar</a>
+                        <form class="inline" action="/admin/delete/{{ h.id }}" method="post" onsubmit="return confirm('Confirmar exclusão?');">
+                            <button type="submit">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p style="margin-top:20px;"><a href="/home">Voltar para Home</a></p>
+    </div>
+</body>
+</html>

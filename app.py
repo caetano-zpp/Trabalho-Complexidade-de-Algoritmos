@@ -98,38 +98,40 @@ class Adjacencia(db.Model):
 def init_db(seed=True):
     """Criar o banco (data.db) e popular com os dados em memória se não existir."""
     if not os.path.exists('data.db'):
-        db.create_all()
-        if seed:
-            # popular bairros
-            for nome, coord in coordenadas_bairros.items():
-                if not Bairro.query.filter_by(nome=nome).first():
-                    b = Bairro(nome=nome, lat=float(coord[0]), lon=float(coord[1]))
-                    db.session.add(b)
-            db.session.commit()
+        # Operations that use the Flask app (SQLAlchemy) need an application context
+        with app.app_context():
+            db.create_all()
+            if seed:
+                # popular bairros
+                for nome, coord in coordenadas_bairros.items():
+                    if not Bairro.query.filter_by(nome=nome).first():
+                        b = Bairro(nome=nome, lat=float(coord[0]), lon=float(coord[1]))
+                        db.session.add(b)
+                db.session.commit()
 
-            # popular hospitais
-            for nome, bnome, total, ocupados, coords in hospitais:
-                b = Bairro.query.filter_by(nome=bnome).first()
-                if b:
-                    if not Hospital.query.filter_by(nome=nome, bairro_id=b.id).first():
-                        h = Hospital(nome=nome, bairro_id=b.id, lat=coords[0], lon=coords[1], leitos_totais=total, leitos_ocupados=ocupados)
-                        db.session.add(h)
-            db.session.commit()
+                # popular hospitais
+                for nome, bnome, total, ocupados, coords in hospitais:
+                    b = Bairro.query.filter_by(nome=bnome).first()
+                    if b:
+                        if not Hospital.query.filter_by(nome=nome, bairro_id=b.id).first():
+                            h = Hospital(nome=nome, bairro_id=b.id, lat=coords[0], lon=coords[1], leitos_totais=total, leitos_ocupados=ocupados)
+                            db.session.add(h)
+                db.session.commit()
 
-            # popular adjacências
-            for origem, lista in adjacencias.items():
-                b_origem = Bairro.query.filter_by(nome=origem).first()
-                if not b_origem:
-                    continue
-                for destino in lista:
-                    b_dest = Bairro.query.filter_by(nome=destino).first()
-                    if b_dest:
-                        # evitar duplicatas
-                        exists = Adjacencia.query.filter_by(bairro_id=b_origem.id, adj_bairro_id=b_dest.id).first()
-                        if not exists:
-                            a = Adjacencia(bairro_id=b_origem.id, adj_bairro_id=b_dest.id)
-                            db.session.add(a)
-            db.session.commit()
+                # popular adjacências
+                for origem, lista in adjacencias.items():
+                    b_origem = Bairro.query.filter_by(nome=origem).first()
+                    if not b_origem:
+                        continue
+                    for destino in lista:
+                        b_dest = Bairro.query.filter_by(nome=destino).first()
+                        if b_dest:
+                            # evitar duplicatas
+                            exists = Adjacencia.query.filter_by(bairro_id=b_origem.id, adj_bairro_id=b_dest.id).first()
+                            if not exists:
+                                a = Adjacencia(bairro_id=b_origem.id, adj_bairro_id=b_dest.id)
+                                db.session.add(a)
+                db.session.commit()
 
 
 def carregar_estruturas_do_db():
@@ -302,6 +304,73 @@ def update_occupancy():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+# ----------------- Administração (CRUD de Hospitais) -----------------
+@app.route('/admin')
+def admin():
+    # Lista hospitais e bairros para o formulário
+    hospitals = Hospital.query.order_by(Hospital.id).all()
+    bairros_list = Bairro.query.order_by(Bairro.nome).all()
+    return render_template('admin.html', hospitals=hospitals, bairros=bairros_list)
+
+
+@app.route('/admin/add', methods=['POST'])
+def admin_add():
+    nome = request.form.get('nome')
+    bairro_id = request.form.get('bairro_id')
+    lat = request.form.get('lat')
+    lon = request.form.get('lon')
+    total = request.form.get('leitos_totais')
+    ocupados = request.form.get('leitos_ocupados')
+
+    try:
+        h = Hospital(
+            nome=nome,
+            bairro_id=int(bairro_id),
+            lat=float(lat) if lat else None,
+            lon=float(lon) if lon else None,
+            leitos_totais=int(total) if total else 0,
+            leitos_ocupados=int(ocupados) if ocupados else 0,
+        )
+        db.session.add(h)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        # Para simplicidade redirecionamos para admin (poderíamos mostrar erro)
+    return redirect(url_for('admin'))
+
+
+@app.route('/admin/edit/<int:hid>', methods=['GET', 'POST'])
+def admin_edit(hid):
+    h = Hospital.query.get_or_404(hid)
+    bairros_list = Bairro.query.order_by(Bairro.nome).all()
+    if request.method == 'POST':
+        h.nome = request.form.get('nome')
+        h.bairro_id = int(request.form.get('bairro_id'))
+        lat = request.form.get('lat')
+        lon = request.form.get('lon')
+        h.lat = float(lat) if lat else None
+        h.lon = float(lon) if lon else None
+        h.leitos_totais = int(request.form.get('leitos_totais')) if request.form.get('leitos_totais') else 0
+        h.leitos_ocupados = int(request.form.get('leitos_ocupados')) if request.form.get('leitos_ocupados') else 0
+        try:
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        return redirect(url_for('admin'))
+    return render_template('admin_edit.html', hospital=h, bairros=bairros_list)
+
+
+@app.route('/admin/delete/<int:hid>', methods=['POST'])
+def admin_delete(hid):
+    h = Hospital.query.get_or_404(hid)
+    try:
+        db.session.delete(h)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+    return redirect(url_for('admin'))
 
 
 if __name__ == '__main__':
