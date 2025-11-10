@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOS Ambulância - Início</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="home-container">
+        <h1>SOS Ambulância</h1>
+        <p class="descricao">Bem-vindo ao sistema de busca de hospitais e UPAs com vagas disponíveis.</p>
+
+        <form action="{{ url_for('mapa') }}" method="POST" id="locationForm">
+            <div class="form-group">
+                <label for="bairroSelect">Selecione um bairro:</label>
+                <select name="bairro" id="bairroSelect" required>
+                    <option value="">Selecione um bairro</option>
+                    {% for bairro in bairros %}
+                    <option value="{{ bairro }}">{{ bairro }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div id="locationInfo" class="location-info">
+                <p>Carregando sua localização...</p>
+            </div>
+            
+            <button type="button" id="useLocationBtn" class="location-button" style="display: none; width: 100%;">
+                📍 Usar minha localização atual
+            </button>
+            
+            <button type="submit" style="width: 100%; margin-top: 15px;">
+                🔍 Procurar hospital mais próximo
+            </button>
+        </form>
+        
+        {% if erro %}
+        <div class="mensagem erro" style="margin-top: 20px;">
+            <strong>Erro:</strong> {{ erro }}
+        </div>
+        {% endif %}
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid var(--border-color); text-align: center;">
+            <a href="{{ url_for('admin') }}" style="color: var(--bg-end); text-decoration: none; font-weight: bold; font-size: 1.1em;">
+                ⚙️ Administração de Hospitais
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const bairrosCoord = {{ coordenadas_bairros|tojson|safe }};
+        const select = document.getElementById('bairroSelect');
+        const locationInfo = document.getElementById('locationInfo');
+        const useLocationBtn = document.getElementById('useLocationBtn');
+
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Raio da Terra em km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function encontrarBairroMaisProximo(lat, lon) {
+            let menorDistancia = Infinity;
+            let bairroMaisProximo = null;
+
+            for (const [bairro, coord] of Object.entries(bairrosCoord)) {
+                if (coord && coord.length === 2) {
+                    const distancia = calcularDistancia(lat, lon, coord[0], coord[1]);
+                    if (distancia < menorDistancia) {
+                        menorDistancia = distancia;
+                        bairroMaisProximo = bairro;
+                    }
+                }
+            }
+
+            return { bairro: bairroMaisProximo, distancia: menorDistancia };
+        }
+
+        function atualizarBairroProximo(position) {
+            const { latitude, longitude } = position.coords;
+            const { bairro, distancia } = encontrarBairroMaisProximo(latitude, longitude);
+            
+            if (bairro) {
+                locationInfo.innerHTML = `
+                    <p><strong>Bairro mais próximo:</strong> ${bairro}</p>
+                    <p><strong>Distância:</strong> ${distancia.toFixed(1)} km</p>
+                `;
+                useLocationBtn.style.display = 'block';
+                useLocationBtn.onclick = () => {
+                    select.value = bairro;
+                    locationInfo.innerHTML = `<p style="color: var(--success);"><strong>✓ Usando localização:</strong> ${bairro}</p>`;
+                };
+            } else {
+                locationInfo.innerHTML = '<p>Não foi possível encontrar um bairro próximo.</p>';
+            }
+        }
+
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                atualizarBairroProximo,
+                (error) => {
+                    locationInfo.innerHTML = `
+                        <p style="color: var(--text-light);">Não foi possível obter sua localização automaticamente.</p>
+                        <p style="color: var(--text-light); font-size: 0.9em;">Por favor, selecione um bairro manualmente.</p>
+                    `;
+                    console.error("Erro de geolocalização:", error);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                }
+            );
+        } else {
+            locationInfo.innerHTML = '<p style="color: var(--text-light);">Seu navegador não suporta geolocalização. Selecione um bairro manualmente.</p>';
+        }
+    </script>
+</body>
+</html>

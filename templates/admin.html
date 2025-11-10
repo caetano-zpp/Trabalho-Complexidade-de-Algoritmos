@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOS Ambulância - Administração</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Administração de Hospitais</h1>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">🏠 Voltar</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary">🚪 Sair</a>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+            <button onclick="abrirModalNovo()" class="btn btn-success" style="width: auto;">
+                ➕ Novo Hospital
+            </button>
+        </div>
+
+        <h2>Hospitais Cadastrados</h2>
+        
+        {% if hospitais %}
+            <div style="display: grid; gap: 15px;">
+                {% for hospital in hospitais %}
+                <div class="hospital-card">
+                    <div class="hospital-header">
+                        <h3>{{ hospital.nome }}</h3>
+                        <div>
+                            {% set ocupacao = (hospital.leitos_ocupados / hospital.total_leitos * 100) if hospital.total_leitos > 0 else 0 %}
+                            {% if ocupacao < 60 %}
+                                <span class="ocupacao-badge ocupacao-baixa">Baixa Ocupação</span>
+                            {% elif ocupacao < 80 %}
+                                <span class="ocupacao-badge ocupacao-media">Média Ocupação</span>
+                            {% else %}
+                                <span class="ocupacao-badge ocupacao-alta">Alta Ocupação</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="hospital-info">
+                        <p><strong>📍 Bairro:</strong> {{ hospital.bairro_nome }}</p>
+                        <p><strong>🛏️ Leitos:</strong> {{ hospital.leitos_ocupados }}/{{ hospital.total_leitos }} 
+                           <span style="color: var(--text-light);">({{ "%.1f"|format(ocupacao) }}%)</span></p>
+                        <p><strong>🌐 Localização:</strong> 
+                           <span style="font-family: monospace; font-size: 0.9em;">
+                               {{ "%.6f"|format(hospital.latitude) }}, {{ "%.6f"|format(hospital.longitude) }}
+                           </span>
+                        </p>
+                    </div>
+                    <div class="hospital-actions">
+                        <button onclick="abrirModalEditar({{ hospital.id }}, '{{ hospital.nome|replace("'", "\\'") }}', '{{ hospital.bairro }}', 
+                                {{ hospital.total_leitos }}, {{ hospital.leitos_ocupados }}, 
+                                {{ hospital.latitude }}, {{ hospital.longitude }})" 
+                                class="btn btn-primary">✏️ Editar</button>
+                        <form action="{{ url_for('deletar_hospital', hospital_id=hospital.id) }}" 
+                              method="POST" style="display: inline;" 
+                              onsubmit="return confirm('⚠️ Tem certeza que deseja deletar o hospital \"{{ hospital.nome }}\"? Esta ação não pode ser desfeita.');">
+                            <button type="submit" class="btn btn-danger">🗑️ Deletar</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 40px; background-color: #f8f9fa; border-radius: 8px; margin-top: 20px;">
+                <p style="font-size: 1.2em; color: var(--text-light);">Nenhum hospital cadastrado ainda.</p>
+                <p style="color: var(--text-light); margin-top: 10px;">Clique em "Novo Hospital" para adicionar o primeiro.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Modal Novo Hospital -->
+    <div id="modalNovo" class="modal">
+        <div class="modal-content">
+            <h2>➕ Novo Hospital</h2>
+            <form action="{{ url_for('criar_hospital') }}" method="POST">
+                <div class="form-group">
+                    <label for="nome">Nome do Hospital:</label>
+                    <input type="text" name="nome" id="nome" required placeholder="Ex: Hospital das Clínicas">
+                </div>
+                <div class="form-group">
+                    <label for="bairro">Bairro:</label>
+                    <select name="bairro" id="bairro" required>
+                        <option value="">Selecione um bairro</option>
+                        {% for bairro in bairros %}
+                        <option value="{{ bairro }}">{{ bairro }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="total_leitos">Total de Leitos:</label>
+                    <input type="number" name="total_leitos" id="total_leitos" min="1" required placeholder="Ex: 50">
+                </div>
+                <div class="form-group">
+                    <label for="leitos_ocupados">Leitos Ocupados:</label>
+                    <input type="number" name="leitos_ocupados" id="leitos_ocupados" min="0" required placeholder="Ex: 30">
+                </div>
+                <div class="form-group">
+                    <label for="latitude">Latitude:</label>
+                    <input type="number" step="any" name="latitude" id="latitude" required placeholder="Ex: -23.5573">
+                </div>
+                <div class="form-group">
+                    <label for="longitude">Longitude:</label>
+                    <input type="number" step="any" name="longitude" id="longitude" required placeholder="Ex: -46.6685">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 Salvar</button>
+                    <button type="button" onclick="fecharModalNovo()" class="btn btn-secondary" style="flex: 1;">❌ Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Hospital -->
+    <div id="modalEditar" class="modal">
+        <div class="modal-content">
+            <h2>✏️ Editar Hospital</h2>
+            <form id="formEditar" method="POST">
+                <div class="form-group">
+                    <label for="edit_nome">Nome do Hospital:</label>
+                    <input type="text" name="nome" id="edit_nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_bairro">Bairro:</label>
+                    <select name="bairro" id="edit_bairro" required>
+                        {% for bairro in bairros %}
+                        <option value="{{ bairro }}">{{ bairro }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit_total">Total de Leitos:</label>
+                    <input type="number" name="total_leitos" id="edit_total" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_ocupados">Leitos Ocupados:</label>
+                    <input type="number" name="leitos_ocupados" id="edit_ocupados" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_lat">Latitude:</label>
+                    <input type="number" step="any" name="latitude" id="edit_lat" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit_lng">Longitude:</label>
+                    <input type="number" step="any" name="longitude" id="edit_lng" required>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">💾 Salvar Alterações</button>
+                    <button type="button" onclick="fecharModalEditar()" class="btn btn-secondary" style="flex: 1;">❌ Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function abrirModalNovo() {
+            document.getElementById('modalNovo').style.display = 'block';
+            // Limpa o formulário
+            document.getElementById('nome').value = '';
+            document.getElementById('bairro').value = '';
+            document.getElementById('total_leitos').value = '';
+            document.getElementById('leitos_ocupados').value = '';
+            document.getElementById('latitude').value = '';
+            document.getElementById('longitude').value = '';
+        }
+        
+        function fecharModalNovo() {
+            document.getElementById('modalNovo').style.display = 'none';
+        }
+        
+        function abrirModalEditar(id, nome, bairro, total, ocupados, lat, lng) {
+            document.getElementById('formEditar').action = `/admin/hospital/${id}/editar`;
+            document.getElementById('edit_nome').value = nome;
+            document.getElementById('edit_bairro').value = bairro;
+            document.getElementById('edit_total').value = total;
+            document.getElementById('edit_ocupados').value = ocupados;
+            document.getElementById('edit_lat').value = lat;
+            document.getElementById('edit_lng').value = lng;
+            document.getElementById('modalEditar').style.display = 'block';
+        }
+        
+        function fecharModalEditar() {
+            document.getElementById('modalEditar').style.display = 'none';
+        }
+        
+        // Fecha modal ao clicar fora
+        window.onclick = function(event) {
+            const modalNovo = document.getElementById('modalNovo');
+            const modalEditar = document.getElementById('modalEditar');
+            if (event.target == modalNovo) {
+                modalNovo.style.display = 'none';
+            }
+            if (event.target == modalEditar) {
+                modalEditar.style.display = 'none';
+            }
+        }
+        
+        // Validação de leitos ocupados não pode ser maior que total
+        document.addEventListener('DOMContentLoaded', function() {
+            const totalInput = document.getElementById('total_leitos');
+            const ocupadosInput = document.getElementById('leitos_ocupados');
+            const editTotalInput = document.getElementById('edit_total');
+            const editOcupadosInput = document.getElementById('edit_ocupados');
+            
+            if (totalInput && ocupadosInput) {
+                totalInput.addEventListener('change', function() {
+                    ocupadosInput.max = this.value;
+                });
+            }
+            
+            if (editTotalInput && editOcupadosInput) {
+                editTotalInput.addEventListener('change', function() {
+                    editOcupadosInput.max = this.value;
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOS Ambulância - Resultado</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .custom-div-icon {
+            background: transparent;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="map-container">
+        <h1>Resultado da Busca</h1>
+
+        <div class="resultado">
+            <strong>Hospital Recomendado:</strong> {{ hospital }}<br>
+            <strong>Bairro de origem:</strong> {{ bairro }}
+        </div>
+
+        <div class="legenda">
+            <h3>Legenda:</h3>
+            <div class="legenda-item">
+                <span class="cor-indicador" style="background-color: #2ecc71;"></span>
+                <span>Baixa ocupação (menos de 60%)</span>
+            </div>
+            <div class="legenda-item">
+                <span class="cor-indicador" style="background-color: #f1c40f;"></span>
+                <span>Média ocupação (60% a 80%)</span>
+            </div>
+            <div class="legenda-item">
+                <span class="cor-indicador" style="background-color: #e74c3c;"></span>
+                <span>Alta ocupação (mais de 80%)</span>
+            </div>
+            <div class="legenda-item">
+                <span class="cor-indicador" style="background-color: #3498db;"></span>
+                <span>Sua localização</span>
+            </div>
+        </div>
+
+        <div id="map"></div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="window.location.href='{{ url_for('home') }}'">Nova Busca</button>
+        </div>
+    </div>
+
+    <script>
+        // Dados do backend
+        const bairroCoord = {{ bairro_coord|tojson|safe }};
+        const hospitais = {{ hospitais|tojson|safe }};
+        const bairroNome = {{ bairro|tojson|safe }};
+
+        // Inicializa o mapa
+        const map = L.map('map', {
+            zoomControl: true
+        });
+        
+        // Adiciona a camada do OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Função para determinar a cor do marcador baseado na taxa de ocupação
+        function getMarkerColor(ocupacao) {
+            if (ocupacao < 0.6) return '#2ecc71'; // Verde
+            if (ocupacao < 0.8) return '#f1c40f'; // Amarelo
+            return '#e74c3c'; // Vermelho
+        }
+
+        // Array para armazenar todos os marcadores para ajustar o zoom
+        const bounds = L.latLngBounds([]);
+
+        // Adiciona marcador do bairro de origem
+        if (bairroCoord && bairroCoord.length === 2 && !isNaN(bairroCoord[0]) && !isNaN(bairroCoord[1])) {
+            const origemMarker = L.marker(bairroCoord, {
+                icon: L.divIcon({
+                    className: 'custom-div-icon',
+                    html: '<div style="font-size: 30px;">📍</div>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30],
+                    popupAnchor: [0, -30]
+                })
+            })
+            .bindPopup(`<strong>${bairroNome}</strong><br>Sua localização`)
+            .addTo(map);
+            
+            bounds.extend(bairroCoord);
+        }
+
+        // Adiciona marcadores para todos os hospitais
+        if (hospitais && Array.isArray(hospitais) && hospitais.length > 0) {
+            hospitais.forEach(hospital => {
+                if (hospital.coords && hospital.coords.length === 2 && 
+                    !isNaN(hospital.coords[0]) && !isNaN(hospital.coords[1])) {
+                    
+                    const color = getMarkerColor(hospital.ocupacao);
+                    const ocupacaoPercent = Math.round(hospital.ocupacao * 100);
+                    
+                    const icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+                                <span style="color: #fff; font-size: 14px; font-weight: bold;">H</span>
+                              </div>`,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15],
+                        popupAnchor: [0, -15]
+                    });
+
+                    const hospitalMarker = L.marker(hospital.coords, { icon: icon })
+                        .bindPopup(`
+                            <div style="min-width: 200px;">
+                                <strong style="font-size: 14px;">${hospital.nome}</strong><br>
+                                <hr style="margin: 5px 0;">
+                                <strong>Ocupação:</strong> ${ocupacaoPercent}%<br>
+                                <strong>Leitos:</strong> ${hospital.ocupados}/${hospital.total}<br>
+                                <strong>Distância:</strong> ${hospital.distancia} bairro(s)
+                            </div>
+                        `)
+                        .addTo(map);
+
+                    bounds.extend(hospital.coords);
+                }
+            });
+        }
+
+        // Ajusta o zoom para mostrar todos os pontos
+        if (bounds.isValid()) {
+            map.fitBounds(bounds.pad(0.1));
+        } else if (bairroCoord && bairroCoord.length === 2) {
+            // Se não houver hospitais, centraliza no bairro de origem
+            map.setView(bairroCoord, 13);
+        } else {
+            // Fallback: centraliza em São Paulo
+            map.setView([-23.5505, -46.6333], 12);
+        }
+    </script>
+</body>
+</html>

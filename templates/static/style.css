@@ -1,0 +1,222 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+:root {
+    --bg-start: #0077b6;
+    --bg-end: #023e8a;
+    --button-bg: #023e8a;
+    --button-hover: #0077b6;
+    --container-bg: rgba(255, 255, 255, 0.1);
+    --text-color: #ffffff;
+    --muted-text: rgba(255,255,255,0.9);
+    --panel-bg: rgba(0, 0, 0, 0.2);
+    --error: #ff4444;
+}
+
+body {
+    background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.container {
+    background-color: var(--container-bg);
+    padding: 50px;
+    border-radius: 20px;
+    text-align: center;
+    width: 420px; /* era 350px */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+
+h1 {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.descricao {
+    font-size: 0.9em;
+    margin-bottom: 25px;
+}
+
+.login-box h2 {
+    margin-bottom: 15px;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 8px;
+    outline: none;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background-color: var(--button-hover);
+}
+
+
+.mensagem {
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+footer {
+    position: absolute;
+    bottom: 10px;
+    font-size: 0.8em;
+    color: var(--muted-text);
+}
+
+/* ================= Home ================= */
+.home-container {
+    background-color: var(--container-bg);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.home-container h1 {
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.home-container p {
+    font-size: 1.1em;
+    margin-bottom: 25px;
+    color: var(--muted-text);
+}
+
+.home-container select {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.9);
+    font-size: 1em;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.home-container select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--button-hover);
+}
+
+.home-container button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 1em;
+    background-color: var(--button-bg);
+    color: var(--text-color);
+    margin: 10px 0;
+}
+
+.location-info {
+    font-size: 0.9em;
+    margin: 15px 0;
+    padding: 12px;
+    background-color: var(--panel-bg);
+    border-radius: 8px;
+    color: var(--muted-text);
+}
+
+.location-button {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+}
+
+.location-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ================= Mapa ================= */
+.map-container {
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 40px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 1000px;
+    margin-top: 40px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.map-container h1 {
+    margin-bottom: 20px;
+}
+
+#map {
+    width: 100%;
+    height: 500px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.legenda {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.legenda-item {
+    margin: 5px 0;
+}
+
+.cor-indicador {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+.custom-div-icon {
+    background: #fff;
+    border: 2px solid #000;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 24px;
+    font-weight: bold;
+}
+
+.resultado {
+    font-size: 1.2em;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 10px;
+}
